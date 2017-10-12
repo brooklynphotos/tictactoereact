@@ -5,9 +5,11 @@ import './Game.css';
 class Game extends Component {
     constructor(props){
         super(props);
+        this.size = 3;
         this.state = {
             history:[{
-                squares: Array(9).fill(null)
+                squares: Array(this.size*this.size).fill(null),
+                cell: null
             }],
             stepNumber: 0,
             xIsNext: true
@@ -24,7 +26,7 @@ class Game extends Component {
         const current = history[this.state.stepNumber];
         const winner = calculateWinner(current.squares);
         const moves = history.map((step,move)=>{
-            const desc = move ? `Go to move #${move}` : 'Got to game start';
+            const desc = move ? `Go to move (${step.cell.x},${step.cell.y})` : 'Got to game start';
             return (
                 <li key={move}>
                     <button onClick={()=>this.jumpTo(move)}>{desc}</button>
@@ -37,10 +39,13 @@ class Game extends Component {
         }else{
             status = 'Next player: '+(this.state.xIsNext ? 'X' : 'O');
         }
+        const getPLFunc = (cell)=>{
+            return current.squares[this.flattenIndex(cell)];
+        };
         return (
             <div className="game">
             <div className="game-board">
-                <Board squares={current.squares} onClick={(i)=>this.handleClick(i)}/>
+                <Board getCellId={cell=>this.flattenIndex(cell)} dimSize={this.size} getPositionLabel={getPLFunc} onClick={(cell)=>this.handleClick(cell)}/>
             </div>
             <div className="game-info">
                 <div>{status}</div>
@@ -49,18 +54,23 @@ class Game extends Component {
             </div>
         );
     }
-    handleClick(i){
+    flattenIndex(cell){
+        return cell.x + (cell.y*this.size);
+    }
+    handleClick(cell){
+        const flatIndex = this.flattenIndex(cell);
         const history = this.state.history.slice(0,this.state.stepNumber+1);
         const current = history[history.length-1];
         const squares = current.squares.slice();
-        if(calculateWinner(squares) || squares[i]){
+        if(calculateWinner(squares) || squares[flatIndex]){
             // already winner or square already clicked
             return;
         }
-        squares[i] = this.state.xIsNext ? 'X' : 'O';
+        squares[flatIndex] = this.state.xIsNext ? 'X' : 'O';
         this.setState({
             history: history.concat([{
-                squares
+                squares,
+                cell
             }]),
             stepNumber: history.length,
             xIsNext: !this.state.xIsNext
